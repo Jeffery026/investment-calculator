@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f2e2b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>الحاسبة الاستثمارية الشاملة</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8eeeb;--pn:#f7faf8;--ink:#0f2e2b;--mu:#58716d;--ac:#b7791f;--tl:#1f6f6a;--ln:#c9d6d1}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 'Noto Naskh Arabic',Tahoma,serif;display:flex;min-height:100vh}
+h1,h2,h3,.big{font-family:Amiri,'Noto Naskh Arabic',serif}
+nav{width:250px;background:var(--ink);color:#d9e8e4;padding:18px 0;overflow:auto;position:sticky;top:0;height:100vh;flex:none}
+nav h1{font-size:22px;margin:0 18px 12px;color:#fff}
+nav h3{font-size:14px;margin:14px 18px 2px;color:#e0b469;font-weight:700}
+nav button{display:block;width:100%;text-align:right;background:none;border:0;color:inherit;font:inherit;padding:3px 18px 3px 10px;border-right:3px solid transparent;cursor:pointer}
+nav button:hover{background:#17433f}
+nav button.on{background:#17433f;border-right-color:var(--ac);color:#fff}
+main{flex:1;min-width:0;padding:18px 24px}
+.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--ln);background:var(--pn);border-radius:20px;padding:2px 14px;cursor:pointer;font:inherit;color:var(--ink)}
+.chip.on{background:var(--tl);color:#fff;border-color:var(--tl)}
+.grid{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:18px;align-items:start}
+.card{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:16px}
+label{display:block;font-size:14px;color:var(--mu);margin-top:8px}
+input,select,textarea{width:100%;font:inherit;padding:5px 8px;border:1px solid var(--ln);border-radius:6px;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.lead{font-size:44px;line-height:1.15;color:var(--tl);font-weight:700;margin:2px 0}
+.lead small,.k small{display:block;font:13px 'Noto Naskh Arabic',serif;color:var(--mu)}
+.ks{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
+.k{border-top:2px solid var(--ac);padding-top:4px}.k b{font-size:19px;font-family:Amiri,serif}
+.k span{font-size:14px;color:var(--mu)}
+.tw{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:4px 10px;border-bottom:1px solid var(--ln);text-align:right;white-space:nowrap}
+th{background:#dfe9e5}
+.bt{background:var(--tl);color:#fff;border:0;border-radius:6px;padding:5px 14px;font:inherit;cursor:pointer;margin:8px 0 0 6px}
+.bt.g{background:#fff;color:var(--ink);border:1px solid var(--ln)}
+.note{color:var(--mu);font-size:14px;margin-top:10px}
+.pr{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid var(--ln);padding:3px 0}
+.mb{display:none}
+@media(max-width:820px){body{display:block}nav{position:fixed;top:0;right:0;width:80%;max-width:300px;transform:translateX(100%);transition:transform .2s;z-index:20;box-shadow:-8px 0 24px #0005}nav.open{transform:none}.mb{display:inline-block}.grid{grid-template-columns:1fr}.lead{font-size:34px}main{padding:14px}}
+@media(prefers-reduced-motion:reduce){nav{transition:none}}
+#rep,.pm{display:none}#rep h2,#rep h3{margin:12px 0 4px}.pm{color:var(--mu);font-size:14px;margin-bottom:8px}
+@media print{nav,.top,.bt,.mb{display:none!important}body{display:block;background:#fff}main{padding:0}.grid{display:block}.card{border:0;padding:6px 0;break-inside:avoid}.pm{display:block}.pr-rep .grid,.pr-rep .pm{display:none}.pr-rep #rep{display:block}svg{max-height:70px}}
+</style>
+</head>
+<body>
+<nav id="nav"></nav>
+<main>
+<div class="top" id="top"></div>
+<div id="view"></div>
+</main>
+<script>
+const F={d:365,w:52,m:12,q:4,y:1},FQ=[['d','يومي'],['w','أسبوعي'],['m','شهري'],['q','ربع سنوي'],['y','سنوي']];
+const CN={USD:['دولار أمريكي',1],EUR:['يورو',.92],SAR:['ريال سعودي',3.75],AED:['درهم إماراتي',3.6725],QAR:['ريال قطري',3.64],KWD:['دينار كويتي',.307],BHD:['دينار بحريني',.376],OMR:['ريال عماني',.385],JOD:['دينار أردني',.709],GBP:['جنيه إسترليني',.79],CHF:['فرنك سويسري',.88],CAD:['دولار كندي',1.37],AUD:['دولار أسترالي',1.5],TRY:['ليرة تركية',41],EGP:['جنيه مصري',48],SYP:['ليرة سورية',13000],RON:['ليو روماني',4.6]};
+let S={cur:'SAR',main:['USD','SAR','EUR'],rates:{},v:{},pr:{}};
+try{Object.assign(S,JSON.parse(localStorage.getItem('invcalc4')||'{}'))}catch(e){}
+for(const c in CN)if(!S.rates[c])S.rates[c]=CN[c][1];
+const save=()=>{try{localStorage.setItem('invcalc4',JSON.stringify(S))}catch(e){}};
+const num=x=>isFinite(x)?(+x).toLocaleString('en-US',{maximumFractionDigits:2}):'—';
+const conv=(x,a,b)=>x/S.rates[a]*S.rates[b];
+const pw=Math.pow;
+const pm=(r,n,P)=>r?P*r/(1-pw(1+r,-n)):P/n;
+const npv=(cf,r)=>cf.reduce((s,c,t)=>s+c/pw(1+r,t),0);
+function irr(cf){let a=-.99,b=10;if(npv(cf,a)*npv(cf,b)>0)return NaN;for(let i=0;i<200;i++){const m=(a+b)/2;npv(cf,a)*npv(cf,m)<=0?b=m:a=m}return(a+b)/2}
+function sim(P,d,n,r,fee,y){const i=pw(1+(r-fee)/100,1/n)-1;let b=P,c=P,o=[];for(let t=1;t<=n*y;t++){b=b*(1+i)+d;c+=d;if(t%n==0)o.push([t/n,c,b,b-c])}return o}
+const last=a=>a.length?a[a.length-1]:[0,0,0,0];
+const MS=[];
+const M=(id,g,t,f,fn)=>MS.push({id,g,t,f,fn});
+const FR=['f','دورية الدفعات','m','F'];
+
+M('inc','المال الشخصي','الدخل والرواتب',[['a','مبلغ الدخل',8000],['f','دورية الدخل','m','F'],['g','زيادة سنوية %',5],['y','المدة (سنوات)',10],['s','نسبة الادخار %',20]],v=>{
+const A=v.a*F[v.f];let o=[],T=0,Sv=0;for(let i=0;i<v.y;i++){const x=A*pw(1+v.g/100,i);T+=x;Sv+=x*v.s/100;o.push([i+1,x,x/12,x*v.s/100])}
+return{k:[['الدخل السنوي الحالي',A,'m'],['يوميًا',A/365,'m'],['أسبوعيًا',A/52,'m'],['شهريًا',A/12,'m'],['الدخل السنوي في آخر سنة',last(o)[1],'m'],['إجمالي الدخل',T,'m'],['إجمالي المدّخر',Sv,'m']],h:['السنة','الدخل السنوي','شهريًا','المدّخر'],r:o}});
+
+M('sav','المال الشخصي','الادخار والأهداف',[['G','الهدف المالي',500000],['C','المبلغ الحالي',20000],['r','العائد السنوي %',6],['y','المدة (سنوات)',10],FR],v=>{
+const n=F[v.f],i=pw(1+v.r/100,1/n)-1,N=n*v.y,fvC=v.C*pw(1+i,N),g=v.G-fvC;
+const need=g<=0?0:i?g*i/(pw(1+i,N)-1):g/N;
+return{k:[['الادخار الدوري المطلوب',need,'m'],['إجمالي ما ستدفعه',need*N,'m'],['قيمة المبلغ الحالي مستقبلًا',fvC,'m'],['الفجوة عن الهدف',Math.max(g,0),'m']],h:[],r:[]}});
+
+M('em','المال الشخصي','صندوق الطوارئ',[['e','المصاريف الشهرية',6000],['m','عدد أشهر الأمان',6],['c','المتوفر حاليًا',10000],['s','ادخار شهري',1500]],v=>{
+const T=v.e*v.m,g=Math.max(T-v.c,0);return{k:[['المبلغ المستهدف',T,'m'],['المتبقي',g,'m'],['أشهر الوصول',v.s?g/v.s:NaN,'n'],['نسبة الإنجاز %',T?Math.min(v.c/T*100,100):0,'p']],h:[],r:[]}});
+
+M('ret','المال الشخصي','التقاعد ورأس المال المطلوب',[['ca','العمر الحالي',30],['ra','عمر التقاعد',60],['la','العمر المتوقع',85],['s','الإنفاق الشهري بقيمة اليوم',8000],['i','التضخم %',3],['r1','عائد فترة الادخار %',7],['r2','عائد فترة التقاعد %',5],['sv','المدخرات الحالية',100000],['c','الادخار الشهري',2000]],v=>{
+const a=v.ra-v.ca,b=v.la-v.ra,sp=v.s*12*pw(1+v.i/100,a),rr=(1+v.r2/100)/(1+v.i/100)-1;
+const cap=rr?sp*(1-pw(1+rr,-b))/rr:sp*b,r1=v.r1/100,f=pw(1+r1,a);
+const pr=v.sv*f+(r1?v.c*12*(f-1)/r1:v.c*12*a),gap=cap-pr;
+return{k:[['رأس المال المطلوب عند التقاعد',cap,'m'],['المتوقع جمعه',pr,'m'],['الفجوة',Math.max(gap,0),'m'],['ادخار شهري إضافي مطلوب',gap>0?(r1?gap*r1/(f-1)/12:gap/a/12):0,'m'],['الإنفاق السنوي عند التقاعد',sp,'m']],h:[],r:[]}});
+
+M('inf','المال الشخصي','التضخم والقوة الشرائية',[['a','المبلغ الحالي',100000],['i','التضخم السنوي %',4],['y','المدة (سنوات)',10],['r','عائد الاستثمار الاسمي %',7]],v=>{
+const fc=v.a*pw(1+v.i/100,v.y),rr=((1+v.r/100)/(1+v.i/100)-1)*100;let o=[];
+for(let t=1;t<=v.y;t++)o.push([t,v.a*pw(1+v.i/100,t),v.a/pw(1+v.i/100,t),v.a*pw(1+v.r/100,t)/pw(1+v.i/100,t)]);
+return{k:[['تكلفة نفس السلعة مستقبلًا',fc,'m'],['القوة الشرائية للمبلغ مستقبلًا',v.a/pw(1+v.i/100,v.y),'m'],['العائد الحقيقي بعد التضخم',rr,'p'],['قيمة الاستثمار الحقيقية',last(o)[3],'m']],h:['السنة','تكلفة السلعة','قوة المبلغ الشرائية','الاستثمار بقيمة اليوم'],r:o}});
+
+M('cmp','الاستثمارات المالية','الاستثمار المركب',[['P','رأس المال الابتدائي',50000],['d','الإيداع الدوري',1000],FR,['r','العائد السنوي %',8],['fee','رسوم سنوية %',0.5],['y','المدة (سنوات)',15],['tx','ضريبة على الربح %',0]],v=>{
+const o=sim(v.P,v.d,F[v.f],v.r,v.fee,v.y),l=last(o),pf=l[3]*(1-v.tx/100);
+return{k:[['القيمة النهائية بعد الضريبة',l[1]+pf,'m'],['إجمالي المساهمات',l[1],'m'],['صافي الربح',pf,'m'],['العائد على المساهمات',l[1]?pf/l[1]*100:0,'p'],['المضاعف',l[1]?(l[1]+pf)/l[1]:0,'n']],h:['السنة','المساهمات','الرصيد','الربح'],r:o}});
+
+M('scn','الاستثمارات المالية','مقارنة سيناريوهات العائد',[['P','رأس المال الابتدائي',50000],['d','الإيداع الدوري',1000],FR,['y','المدة (سنوات)',15],['fee','رسوم سنوية %',0.5],['a','سيناريو متحفظ %',5],['b','سيناريو أساسي %',8],['c','سيناريو متفائل %',12]],v=>{
+const s=[v.a,v.b,v.c].map(r=>sim(v.P,v.d,F[v.f],r,v.fee,v.y));
+return{k:[['متحفظ ('+v.a+'%)',last(s[0])[2],'m'],['أساسي ('+v.b+'%)',last(s[1])[2],'m'],['متفائل ('+v.c+'%)',last(s[2])[2],'m'],['الفرق بين المتفائل والمتحفظ',last(s[2])[2]-last(s[0])[2],'m']],h:['السنة','متحفظ','أساسي','متفائل'],r:s[0].map((x,i)=>[x[0],x[2],s[1][i][2],s[2][i][2]])}});
+
+M('stk','الاستثمارات المالية','الأسهم والصناديق والتوزيعات',[['u','عدد الوحدات',500],['bp','سعر الشراء',40],['sp','سعر البيع المتوقع',55],['dy','عائد التوزيعات السنوي %',3],['y','مدة الاحتفاظ (سنوات)',3],['fe','عمولة كل عملية %',0.15]],v=>{
+const cost=v.u*v.bp*(1+v.fe/100),pr=v.u*v.sp*(1-v.fe/100),dv=v.u*v.bp*v.dy/100*v.y,pf=pr+dv-cost;
+return{k:[['صافي الربح',pf,'m'],['التوزيعات المستلمة',dv,'m'],['التكلفة الكلية',cost,'m'],['العائد الكلي ROI',cost?pf/cost*100:0,'p'],['العائد السنوي المركب',v.y&&cost?(pw((pr+dv)/cost,1/v.y)-1)*100:0,'p']],h:[],r:[]}});
+
+M('cf','الاستثمارات المالية','التدفقات النقدية NPV / IRR / ROI',[['t','التدفقات (سنة 0 ثم ما بعدها)','-10000, 3000, 4000, 5000, 3000','t'],['r','معدل الخصم %',8]],v=>{
+const cf=String(v.t).split(/[,،;\s]+/).map(Number).filter(x=>!isNaN(x));let c=0,pb=NaN,o=[];
+cf.forEach((x,t)=>{c+=x;o.push([t,x,x/pw(1+v.r/100,t),c]);if(isNaN(pb)&&c>=0&&t>0)pb=t});
+const ng=-cf.filter(x=>x<0).reduce((a,b)=>a+b,0),ps=cf.filter(x=>x>0).reduce((a,b)=>a+b,0);
+return{k:[['صافي القيمة الحالية NPV',npv(cf,v.r/100),'m'],['معدل العائد الداخلي IRR',irr(cf)*100,'p'],['ROI',ng?(ps-ng)/ng*100:0,'p'],['فترة الاسترداد (سنة)',pb,'n']],h:['السنة','التدفق','المخصوم','التراكمي'],r:o}});
+
+M('gld','الاستثمارات المالية','الذهب',[['w','الوزن (غرام)',100],['bp','سعر الشراء للغرام',300],['sp','سعر البيع المتوقع للغرام',360],['bf','مصنعية/رسوم الشراء %',3],['sf','خصم/رسوم البيع %',1],['y','المدة (سنوات)',3]],v=>{
+const cost=v.w*v.bp*(1+v.bf/100),val=v.w*v.sp*(1-v.sf/100),pf=val-cost;
+return{k:[['صافي الربح',pf,'m'],['القيمة عند البيع',val,'m'],['التكلفة',cost,'m'],['العائد الكلي',cost?pf/cost*100:0,'p'],['العائد السنوي',v.y&&cost?(pw(val/cost,1/v.y)-1)*100:0,'p'],['سعر التعادل للغرام',v.w?cost/v.w/(1-v.sf/100):0,'m']],h:[],r:[]}});
+
+M('fx','الاستثمارات المالية','العملات',[['a','المبلغ',10000],['fr','من','USD','C'],['to','إلى','SAR','C'],['ch','تغيّر متوقع في سعر الصرف %',5]],v=>{
+const x=conv(v.a,v.fr,v.to),y=x*(1+v.ch/100);
+return{k:[['المبلغ بعد التحويل ('+v.to+')',x,'n'],['سعر الصرف',conv(1,v.fr,v.to),'n'],['القيمة بعد التغيّر',y,'n'],['الربح/الخسارة من التغيّر',y-x,'n']],h:[],r:[]}});
+
+M('rent','العقار','شراء وتأجير العقار',[['P','سعر العقار',1500000],['dn','الدفعة الأولى %',30],['m','الإيجار الشهري',9000],['oc','نسبة الإشغال %',92],['ex','المصاريف % من الإيجار',15],['rg','نمو الإيجار سنويًا %',3],['ap','ارتفاع قيمة العقار سنويًا %',4],['y','المدة (سنوات)',10],['lr','فائدة التمويل %',6],['ly','مدة التمويل (سنوات)',20]],v=>{
+const L=v.P*(1-v.dn/100),r=v.lr/1200,pay=L?pm(r,v.ly*12,L):0,inv=v.P*v.dn/100;let bal=L,cum=0,o=[],c1=0,n1=0;
+for(let i=0;i<v.y;i++){const rt=v.m*12*pw(1+v.rg/100,i)*v.oc/100,noi=rt*(1-v.ex/100);let pd=0;
+for(let k=0;k<12;k++)if(bal>0){bal=bal*(1+r)-pay;pd+=pay}if(bal<0)bal=0;
+const cf=noi-pd;cum+=cf;if(!i){c1=cf;n1=noi}o.push([i+1,rt,noi,cf,v.P*pw(1+v.ap/100,i+1),bal])}
+const val=v.P*pw(1+v.ap/100,v.y),pf=cum+val-bal-inv;
+return{k:[['إجمالي الربح',pf,'m'],['العائد على رأس المال ROI',inv?pf/inv*100:0,'p'],['العائد الإجمالي',v.P?v.m*12/v.P*100:0,'p'],['العائد الصافي (Cap Rate)',v.P?n1/v.P*100:0,'p'],['القسط الشهري',pay,'m'],['التدفق النقدي للسنة الأولى',c1,'m'],['قيمة العقار في النهاية',val,'m'],['رصيد القرض المتبقي',bal,'m']],h:['السنة','الإيجار الفعلي','صافي التشغيل','التدفق بعد القسط','قيمة العقار','رصيد القرض'],r:o}});
+
+M('val','العقار','تقييم العقار',[['m','الإيجار الشهري',9000],['oc','الإشغال %',92],['ex','المصاريف السنوية',15000],['cap','معدل الرسملة Cap Rate %',6.5],['ar','المساحة (م²)',300],['pp','سعر المتر في السوق',4800]],v=>{
+const noi=v.m*12*v.oc/100-v.ex,a=v.cap?noi/(v.cap/100):0,b=v.ar*v.pp;
+return{k:[['القيمة المقدّرة (متوسط الطريقتين)',(a+b)/2,'m'],['بالدخل (NOI ÷ Cap)',a,'m'],['بمقارنة السوق',b,'m'],['صافي الدخل التشغيلي NOI',noi,'m'],['سعر المتر حسب الدخل',v.ar?a/v.ar:0,'m']],h:[],r:[]}});
+
+M('dev','العقار','تطوير: أرض ← بناء ← بيع',[['la','مساحة الأرض (م²)',600],['lp','سعر متر الأرض',1500],['ba','مساحة البناء (م²)',900],['bc','تكلفة متر البناء',1800],['ex','إضافات وتشطيبات',100000],['ds','التصميم والإشراف % من البناء',5],['ct','احتياطي طوارئ %',5],['fn','تمويل ورسوم % من الإجمالي',4],['sa','المساحة القابلة للبيع (م²)',800],['sp','سعر بيع المتر',4200],['mo','مدة المشروع (أشهر)',18]],v=>{
+const bd=v.ba*v.bc,base=v.la*v.lp+bd+v.ex+bd*v.ds/100,tot=base*(1+v.ct/100)*(1+v.fn/100),rev=v.sa*v.sp,pf=rev-tot;
+return{k:[['صافي الربح',pf,'m'],['إجمالي التكلفة',tot,'m'],['الإيرادات',rev,'m'],['هامش الربح',rev?pf/rev*100:0,'p'],['العائد على التكلفة',tot?pf/tot*100:0,'p'],['العائد السنوي المكافئ',v.mo&&tot?(pw(rev/tot,12/v.mo)-1)*100:0,'p'],['سعر التعادل للمتر',v.sa?tot/v.sa:0,'m']],h:[],r:[]}});
+
+M('loan','التمويل','التمويل والقروض والقدرة على التحمل',[['L','مبلغ القرض',800000],['r','الفائدة السنوية %',6],['y','المدة (سنوات)',20],['fe','رسوم إدارية %',1],['inc','الدخل الشهري',20000],['lim','حد القسط من الدخل %',35]],v=>{
+const r=v.r/1200,N=v.y*12,pay=pm(r,N,v.L);let b=v.L,o=[],ti=0;
+for(let i=1;i<=v.y;i++){let it=0;for(let k=0;k<12;k++){const x=b*r;it+=x;b=b*(1+r)-pay}ti+=it;o.push([i,pay*12,it,Math.max(b,0)])}
+const mp=v.inc*v.lim/100,mx=r?mp*(1-pw(1+r,-N))/r:mp*N;
+return{k:[['القسط الشهري',pay,'m'],['إجمالي الفوائد',pay*N-v.L,'m'],['إجمالي المدفوع',pay*N+v.L*v.fe/100,'m'],['نسبة القسط إلى الدخل',v.inc?pay/v.inc*100:0,'p'],['أقصى قرض تتحمله',mx,'m'],['الرسوم',v.L*v.fe/100,'m']],h:['السنة','المدفوع','الفوائد','الرصيد'],r:o}});
+
+M('biz','الأعمال','ربحية المشروع',[['rev','الإيرادات',60000],['mat','المواد',18000],['h','ساعات العمل',160],['hv','قيمة الساعة',50],['fx','مصاريف ثابتة',8000]],v=>{
+const lb=v.h*v.hv,pf=v.rev-v.mat-lb-v.fx;
+return{k:[['الربح الصافي',pf,'m'],['هامش الربح',v.rev?pf/v.rev*100:0,'p'],['تكلفة العمالة',lb,'m'],['إجمالي التكاليف',v.mat+lb+v.fx,'m'],['ربح الساعة الفعلي',v.h?(v.rev-v.mat-v.fx)/v.h:0,'m']],h:[],r:[]}});
+
+M('bep','الأعمال','نقطة التعادل وهامش الأمان',[['fx','التكاليف الثابتة',50000],['p','سعر بيع الوحدة',120],['vc','التكلفة المتغيرة للوحدة',70],['u','المبيعات المتوقعة (وحدات)',1500]],v=>{
+const cm=v.p-v.vc,b=cm>0?v.fx/cm:NaN;
+return{k:[['وحدات التعادل',b,'n'],['إيراد التعادل',b*v.p,'m'],['هامش الأمان',v.u?(v.u-b)/v.u*100:0,'p'],['الربح المتوقع',v.u*cm-v.fx,'m'],['هامش مساهمة الوحدة',cm,'m']],h:[],r:[]}});
+
+M('prc','الأعمال','التسعير',[['inc','الدخل المطلوب شهريًا',15000],['ex','المصاريف الشهرية',4000],['hr','ساعات قابلة للفوترة شهريًا',100],['mg','هامش الربح %',20]],v=>{
+const rv=(v.inc+v.ex)*(1+v.mg/100);
+return{k:[['سعر الساعة المطلوب',v.hr?rv/v.hr:0,'m'],['سعر اليوم (8 ساعات)',v.hr?rv/v.hr*8:0,'m'],['الإيراد الشهري المطلوب',rv,'m'],['الإيراد السنوي',rv*12,'m']],h:[],r:[]}});
+
+M('two','المقارنة','مقارنة استثمارين',[['c1','رأس مال أ',100000],['r1','عائد أ %',8],['i1','دخل سنوي أ',2000],['c2','رأس مال ب',100000],['r2','عائد ب %',11],['i2','دخل سنوي ب',0],['y','المدة (سنوات)',10]],v=>{
+const f=(c,r,i)=>{const e=c*pw(1+r/100,v.y),t=e+i*v.y;return[e,i*v.y,t,c?(pw(t/c,1/v.y)-1)*100:0]};
+const A=f(v.c1,v.r1,v.i1),B=f(v.c2,v.r2,v.i2);
+return{k:[['الأفضل',A[2]>=B[2]?'الاستثمار أ':'الاستثمار ب','s'],['إجمالي أ',A[2],'m'],['إجمالي ب',B[2],'m'],['الفرق',Math.abs(A[2]-B[2]),'m']],h:['البند','أ','ب'],r:[['القيمة المستقبلية',A[0],B[0]],['إجمالي الدخل',A[1],B[1]],['الإجمالي',A[2],B[2]],['العائد السنوي %',A[3],B[3]]]}});
+
+
+const mem=t=>String(t).split('\n').map(l=>l.split(/[,،;\t]+/).map(x=>x.trim())).filter(p=>p[0]).map(p=>({n:p[0],c:parseFloat(p[1])||0,j:Math.max(parseInt(p[2])||1,1)}));
+const G='الادخار الجماعي والعائلي';
+M('grp',G,'صندوق استثماري مشترك (نظام الوحدات)',[['m','الأعضاء: الاسم، المساهمة الشهرية، شهر الانضمام','أحمد، 1000، 1\nسارة، 1000، 1\nخالد، 500، 1\nمنى، 1500، 13\nيوسف، 800، 25','t'],['r','العائد السنوي المتوقع %',8],['fee','رسوم إدارة سنوية %',1],['y','المدة (سنوات)',5]],v=>{
+const ms=mem(v.m),T=v.y*12,i=pw(1+(v.r-v.fee)/100,1/12)-1;let fund=0,un=0,u=ms.map(()=>0),c=ms.map(()=>0),tc=0,yr=[];
+for(let t=1;t<=T;t++){fund*=1+i;ms.forEach((x,k)=>{if(t>=x.j&&x.c){const nv=un?fund/un:1,nu=x.c/nv;u[k]+=nu;un+=nu;fund+=x.c;c[k]+=x.c;tc+=x.c}});if(t%12==0)yr.push([t/12,tc,fund,fund-tc])}
+const nav=un?fund/un:1;let md=0;
+const r=ms.map((x,k)=>{const val=u[k]*nav,nv=tc?c[k]/tc*fund:0;md=Math.max(md,Math.abs(val-nv));return[x.n,c[k],tc?c[k]/tc*100:0,val,val-c[k],c[k]?(val/c[k]-1)*100:0,nv,val-nv]});
+return{k:[['قيمة الصندوق النهائية',fund,'m'],['إجمالي المساهمات',tc,'m'],['صافي الربح',fund-tc,'m'],['عائد الصندوق على المساهمات',tc?(fund/tc-1)*100:0,'p'],['قيمة الوحدة (البداية = 1)',nav,'n'],['أكبر فرق بسبب توقيت الانضمام',md,'m']],
+h:['العضو','مساهماته','نسبة مساهمته %','قيمة حصته','ربحه','عائده %','لو وُزّع بنسبة المساهمة فقط','الفرق'],r,ns:1,x:[{h:['السنة','المساهمات','قيمة الصندوق','الربح'],r:yr}],
+note:'يشتري كل عضو وحدات بسعر الوحدة يوم دفعه، فلا يستفيد المنضم متأخرًا من أرباح سبقت انضمامه. عمود «الفرق» يبيّن ما كان سيُظلم به الأعضاء لو وُزّعت الأرباح بنسبة المساهمات فقط.'}});
+
+M('rot',G,'الجمعية الدورية والقيمة الزمنية',[['m','الأعضاء: الاسم، عدد الحصص','أحمد، 1\nسارة، 1\nخالد، 2\nمنى، 1\nيوسف، 1','t'],['a','قسط الحصة الشهري',1000],['r','العائد البديل السنوي % (لو استثمر المال)',8]],v=>{
+const ms=mem(v.m),pos=[];ms.forEach(x=>{for(let s=0;s<Math.round(x.c);s++)pos.push(x.n)});const N=pos.length;
+if(!N)return{k:[['أضف أعضاء بحصص',0,'n']],h:[],r:[]};
+const im=pw(1+v.r/100,1/12)-1;let pp=0;for(let t=1;t<=N;t++)pp+=v.a/pw(1+im,t);
+const r=[],ag={};pos.forEach((n,i)=>{const k=i+1,pv=v.a*N/pw(1+im,k)-pp;r.push([k,n,v.a*N,v.a*k,v.a*(N-k),pv,-pv]);(ag[n]=ag[n]||[0,0])[0]++;ag[n][1]+=pv});
+const pv=r.map(x=>x[5]);
+return{k:[['مبلغ الجمعية للمستلم',v.a*N,'m'],['مدة الجمعية (أشهر)',N,'n'],['ميزة المستلم الأول (قيمة اليوم)',pv[0],'m'],['كلفة المستلم الأخير (قيمة اليوم)',pv[N-1],'m'],['أعلى مبلغ معرّض للتعثر',v.a*(N-1),'m'],['إجمالي القيمة المنقولة بين الأعضاء',pv.filter(x=>x>0).reduce((a,b)=>a+b,0),'m']],
+h:['شهر الاستلام','المستلم','يستلم','دفع حتى الآن','التزام متبقٍ','الميزة/الكلفة بقيمة اليوم','تعويض عادل للتوازن'],r,ns:1,
+x:[{h:['العضو','عدد الحصص','صافي الميزة/الكلفة بقيمة اليوم'],r:Object.keys(ag).map(n=>[n,ag[n][0],ag[n][1]])}],
+note:'الجمعية بلا فوائد تبدو متساوية بالأرقام، لكن من يستلم مبكرًا يقترض بلا ثمن ومن يستلم متأخرًا يُقرض. الأعمدة تقيس هذا الفرق، و«أعلى مبلغ معرّض للتعثر» هو ما يستدعي ضمانًا إذا استلم أحدهم مبكرًا ثم انسحب.'}});
+
+M('tak',G,'صندوق تكافل ومناسبات (زواج وغيره)',[['m','الأعضاء: الاسم، المساهمة الشهرية، شهر الانضمام','الأب، 300، 1\nالابن الأكبر، 200، 1\nالابن الثاني، 200، 1\nالعم، 300، 1\nالجد، 150، 1','t'],['ev','قيمة المنحة للحدث الواحد',12000],['ey','عدد الأحداث المتوقعة سنويًا',1],['ini','احتياطي ابتدائي',20000],['r','عائد الاحتياطي سنويًا %',4],['adm','تكاليف إدارية % من المساهمات',2],['y','المدة (سنوات)',10]],v=>{
+const ms=mem(v.m),ir=pw(1+v.r/100,1/12)-1,Tm=v.y*12,SC=ms.reduce((a,x)=>a+x.c,0);
+const run=(k,em)=>{let R=v.ini,mn=R,dep=0,rows=[],cy=0,py=0;for(let t=1;t<=Tm;t++){R*=1+ir;const cn=ms.reduce((s,x)=>t>=x.j?s+x.c:s,0)*k*(1-v.adm/100),pa=v.ev*v.ey*em/12;R+=cn-pa;cy+=cn;py+=pa;if(R<mn)mn=R;if(R<0&&!dep)dep=t;if(t%12==0){rows.push([t/12,cy,py,R]);cy=0;py=0}}return{R,mn,dep,rows}};
+const b=run(1,1),st=run(1,2);let lo=0,hi=50,k=NaN;if(run(hi,1).mn>=0){for(let i=0;i<40;i++){const m=(lo+hi)/2;run(m,1).mn>=0?hi=m:lo=m}k=hi}
+const an=v.ev*v.ey;
+return{k:[['الاحتياطي في نهاية المدة',b.R,'m'],['المساهمة الشهرية الحالية',SC,'m'],['المساهمة الشهرية اللازمة للاستدامة',SC*k,'m'],['مضاعف المساهمة اللازم',k,'n'],['نسبة التغطية (الاحتياطي ÷ مصروف سنة)',an?b.R/an:0,'n'],['الاحتياطي لو تضاعفت الأحداث',st.R,'m'],['نفاد الاحتياطي',b.dep?'الشهر '+b.dep:'لا ينفد','s']],
+h:['السنة','المساهمات (بعد التكاليف)','المنح المصروفة','الاحتياطي في نهاية السنة'],r:b.rows,
+x:[{h:['العضو','مساهمته الشهرية','نسبته %','إجمالي ما سيدفعه'],r:ms.map(x=>[x.n,x.c,SC?x.c/SC*100:0,x.c*Math.max(Tm-x.j+1,0)])}],
+note:'المحاكاة بمتوسط الأحداث لا بتوقيت فعلي، لذا اعتمد على اختبار «ضعف الأحداث» لقياس الأمان. المضاعف أكبر من 1 يعني أن الاشتراكات الحالية لا تكفي المنح المتوقعة.'}});
+
+const FD=()=>({mem:[{n:'الأخ الأول',job:'مهندس',age:35,inc:15000,sv:15,g:5,open:40000},{n:'الأخ الثاني',job:'تاجر',age:32,inc:12000,sv:20,g:5,open:30000}],pj:[{n:'المشروع المشترك',r:12,ini:[25000,25000],al:[2000,1500]}],y:10,sr:6,hide:false,debts:[],tx:[]});
+if(!S.fam)S.fam=FD();
+const normFam=()=>{const f=S.fam;f.debts=f.debts||[];f.tx=f.tx||[];f.goals=f.goals||[];f.ex=f.ex||{p:0,m:0,val:100000,disc:10};f.mem.forEach(m=>{if(m.open==null)m.open=0});f.pj.forEach(p=>{if(!p.st)p.st=new Date().toISOString().slice(0,10)})};normFam();
+const refresh=()=>cur=='_f'?famCalc():cur=='_l'?ledCalc():MS.some(m=>m.id==cur)&&calc();
+const esc=x=>String(x).replace(/"/g,'&quot;');
+function setP(t){const k=t.dataset.p.split('.');let o=S.fam;for(let i=0;i<k.length-1;i++)o=o[k[i]];o[k[k.length-1]]=t.type=='checkbox'?t.checked:t.type=='number'?(parseFloat(t.value)||0):t.tagName=='SELECT'&&t.value!==''&&!isNaN(+t.value)?+t.value:t.value}
+const fvs=(inc,g,pc,T,im)=>{let b=0;for(let t=1;t<=T;t++)b=b*(1+im)+inc*pw(1+g/100,Math.floor((t-1)/12))*pc/100;return b};
+function famFn(){const f=S.fam,T=f.y*12,im=pw(1+f.sr/100,1/12)-1,Z=()=>f.mem.map(()=>0);
+const sf=f.mem.map(m=>fvs(m.inc,m.g,m.sv,T,im)),sc=f.mem.map(m=>{let c=0;for(let t=1;t<=T;t++)c+=m.inc*pw(1+m.g/100,Math.floor((t-1)/12))*m.sv/100;return c});
+const pv=Z(),pc=Z(),pm_=Z(),xs=[];let tf=0;
+f.pj.forEach(p=>{const ip=pw(1+p.r/100,1/12)-1;let fund=0,un=0;const u=Z(),c=Z();
+f.mem.forEach((m,i)=>{const a=p.ini[i]||0;u[i]+=a;un+=a;fund+=a;c[i]+=a;pm_[i]+=p.al[i]||0});
+for(let t=1;t<=T;t++){fund*=1+ip;f.mem.forEach((m,i)=>{const a=p.al[i]||0;if(a){const nv=un?fund/un:1,nu=a/nv;u[i]+=nu;un+=nu;fund+=a;c[i]+=a}})}
+const nav=un?fund/un:1;tf+=fund;
+xs.push({t:'مشروع: '+p.n+' — عائد '+p.r+'% — قيمته '+num(fund)+' '+S.cur,h:['العضو','مساهماته','نسبته %','قيمة حصته','ربحه'],r:f.mem.map((m,i)=>{const v=u[i]*nav;pv[i]+=v;pc[i]+=c[i];return[m.n,c[i],fund?v/fund*100:0,v,v-c[i]]})})});
+const W=f.mem.map((m,i)=>sf[i]+pv[i]),TW=W.reduce((a,b)=>a+b,0),sav=f.mem.map(m=>m.inc*m.sv/100),cm=f.mem.map((m,i)=>m.inc?(sav[i]+pm_[i])/m.inc*100:0),ir=f.mem.map((m,i)=>m.inc?pm_[i]/m.inc*100:0),gr=f.mem.map((m,i)=>(sc[i]+pc[i])?W[i]/(sc[i]+pc[i]):0);
+const mx=a=>a.indexOf(Math.max(...a)),bd=f.mem.map(()=>[]);
+if(f.mem.length){bd[mx(cm)].push('🏅 الأكثر التزامًا');bd[mx(f.mem.map(m=>m.sv))].push('💰 الأكثر ادخارًا');bd[mx(ir)].push('🚀 الأكثر استثمارًا');bd[mx(gr)].push('📈 الأفضل نموًا')}
+const ord=f.mem.map((m,i)=>i).sort((a,b)=>cm[b]-cm[a]),neg=f.mem.filter((m,i)=>m.inc-sav[i]-pm_[i]<0).map(m=>m.n);
+const TI=f.mem.reduce((a,m)=>a+m.inc,0),TC=sav.reduce((a,b)=>a+b,0)+pm_.reduce((a,b)=>a+b,0);
+const k=[['إجمالي ثروة العائلة بعد '+f.y+' سنة',TW,'m'],['المدّخرات الشخصية',sf.reduce((a,b)=>a+b,0),'m'],['قيمة المشاريع',tf,'m'],['الالتزام الشهري للادخار والمشاريع',TC,'m'],['نسبة الالتزام من دخل العائلة',TI?TC/TI*100:0,'p'],['المتصدر في الالتزام',f.mem.length?f.mem[ord[0]].n:'—','s']];
+if(!f.hide)k.splice(4,0,['دخل العائلة الشهري',TI,'m']);
+return{k,ns:1,h:['العضو','المهنة','العمر','الدخل الشهري','يدّخر شهريًا','يستثمر شهريًا','المتبقي للإنفاق','نسبة الالتزام %','ثروته المتوقعة','نصيبه من ثروة العائلة %'],
+r:f.mem.map((m,i)=>[m.n,m.job,m.age,f.hide?'—':m.inc,sav[i],pm_[i],m.inc-sav[i]-pm_[i],cm[i],W[i],TW?W[i]/TW*100:0]),
+x:[{t:'لوحة الإنجاز (بالنسبة من الدخل لا بالمبلغ)',h:['المركز','العضو','نسبة الالتزام %','نسبة الادخار %','نسبة الاستثمار %','الشارات','أثر رفع الادخار 5% من الدخل'],r:ord.map((i,n)=>[n+1,f.mem[i].n,cm[i],f.mem[i].sv,ir[i],bd[i].join(' · ')||'—',fvs(f.mem[i].inc,f.mem[i].g,5,T,im)])},...xs],
+note:'الترتيب بنسبة الالتزام من الدخل ليكون التنافس عادلًا بين دخول مختلفة؛ فمن يدّخر 20% من راتب أقل يتفوق على من يدّخر 10% من راتب أعلى. التوقعات تفترض ثبات النسب والعوائد.'+(neg.length?' تنبيه: التزامات '+neg.join('، ')+' تفوق دخله الشهري.':'')}}
+function famCalc(){const f=S.fam,o=lastOut=famFn();save();
+lastMeta={t:'الحاسبة العائلية',f:'family',d:D(),ins:[['الأعضاء',f.mem.map(m=>`${m.n} — ${m.job||'—'} — ${m.age} سنة — رأس المال ${num(m.open||0)}`+(f.hide?'':` — الدخل ${num(m.inc)}`)+` — ادخار ${m.sv}%`).join('\n')],['المشاريع',f.pj.map(p=>`${p.n}: عائد ${p.r}%`).join('\n')],['مدة الخطة (سنوات)',f.y],['عائد المدخرات الشخصية %',f.sr]]};paint(o)}
+function fam(){const f=S.fam,fl=(l,p,v,t)=>`<div><label>${l}</label><input ${t?'':'type="number" step="any" '}data-p="${p}" value="${esc(v)}"></div>`,G3='display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0 12px';
+$('#view').innerHTML=`<h2 style="margin:0 0 10px;font-size:28px">الحاسبة العائلية — مشروع مفتوح</h2><div class="pm" id="pm"></div>
+<div class="card fm"><h3 style="margin:0">الأعضاء</h3>${f.mem.map((m,i)=>`<div class="card" style="margin-top:10px"><div style="${G3}">${fl('الاسم',`mem.${i}.n`,m.n,1)}${fl('المهنة',`mem.${i}.job`,m.job,1)}${fl('الرصيد الابتدائي (رأس المال)',`mem.${i}.open`,m.open||0)}${fl('العمر',`mem.${i}.age`,m.age)}${fl('الدخل الشهري',`mem.${i}.inc`,m.inc)}${fl('الادخار من الدخل %',`mem.${i}.sv`,m.sv)}${fl('نمو الدخل سنويًا %',`mem.${i}.g`,m.g)}</div><button class="bt g" data-dm="${i}">حذف العضو</button></div>`).join('')}<button class="bt" id="am">+ إضافة عضو</button></div>
+<div class="card fm" style="margin-top:14px"><h3 style="margin:0">المشاريع (أي مشروع تريده)</h3>${f.pj.map((p,j)=>`<div class="card" style="margin-top:10px"><div style="${G3}">${fl('اسم المشروع',`pj.${j}.n`,p.n,1)}${fl('العائد السنوي المتوقع %',`pj.${j}.r`,p.r)}<div><label>تاريخ البدء</label><input type="date" data-p="pj.${j}.st" value="${p.st}"></div></div><label style="margin-top:12px">مساهمة كل عضو: مبلغ أولي مرة واحدة ومبلغ شهري</label><div style="${G3}">${f.mem.map((m,i)=>fl(m.n+' — أولي',`pj.${j}.ini.${i}`,p.ini[i]||0)+fl(m.n+' — شهري',`pj.${j}.al.${i}`,p.al[i]||0)).join('')}</div><button class="bt g" data-dp="${j}">حذف المشروع</button></div>`).join('')}<button class="bt" id="ap">+ مشروع جديد</button></div>
+<div class="card fm" style="margin-top:14px"><div style="${G3}">${fl('مدة الخطة (سنوات)','y',f.y)}${fl('عائد المدخرات الشخصية %','sr',f.sr)}</div><label><input type="checkbox" style="width:auto" data-p="hide" ${f.hide?'checked':''}> إخفاء الدخول من النتائج والطباعة والصورة</label></div>
+<div class="card" id="res" style="margin-top:14px"></div><div id="rep"></div>`;famCalc()}
+
+const CT={inc:'دخل',sav:'ادخار',inv:'استثمار',debt:'سداد دين',exp:'مصروف',tr:'تحويل لعضو',goal:'مساهمة في هدف'};
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const fixRef=(L,i)=>{const f=S.fam;f.tx=f.tx.filter(t=>t.r!=L+i&&!(L=='m'&&t.m==i)).map(t=>{if(L=='m'&&t.m>i)t.m--;if(String(t.r)[0]==L&&+String(t.r).slice(1)>i)t.r=L+(+String(t.r).slice(1)-1);return t});
+if(L=='m')f.debts.forEach(d=>{if(d.o==i)d.o=-1;else if(d.o>i)d.o--})};
+function ledFn(){const f=S.fam,N=f.mem.length,Z=()=>f.mem.map(()=>0),B={};['inc','sav','inv','debt','exp','goal','tOut','tIn'].forEach(k=>B[k]=Z());
+const ow=f.mem.map(Z),dp=f.debts.map(Z),ip=f.pj.map(Z),gp=f.goals.map(Z);
+f.tx.forEach(t=>{const a=t.a,m=t.m,r=String(t.r||''),j=+r.slice(1);if(m<0||m>=N)return;
+if(t.c=='tr'){if(r[0]=='m'&&j>=0&&j<N){B.tOut[m]+=a;B.tIn[j]+=a;ow[m][j]-=a}return}
+B[t.c][m]+=a;
+if(t.c=='inv'&&r[0]=='p'&&ip[j])ip[j][m]+=a;
+if(t.c=='goal'&&r[0]=='g'&&gp[j])gp[j][m]+=a;
+if(t.c=='debt'&&r[0]=='d'){const d=f.debts[j];if(d){dp[j][m]+=a;if(d.o>=0){if(d.o!=m)ow[d.o][m]+=a}else for(let q=0;q<N;q++)if(q!=m)ow[q][m]+=a/N}}});
+const cash=f.mem.map((m,i)=>(m.open||0)+B.inc[i]-B.sav[i]-B.inv[i]-B.debt[i]-B.exp[i]-B.goal[i]-B.tOut[i]+B.tIn[i]);
+const now=new Date(),add=(d,k)=>{const x=new Date(d);x.setMonth(x.getMonth()+k);return x};let tr=0,tp=0,ta=0;
+const dr=f.debts.map((d,i)=>{const paid=dp[i].reduce((a,b)=>a+b,0),rem=Math.max(d.tot-paid,0),cnt=d.inst>0?Math.ceil(d.tot/d.inst):0,st=new Date(d.d+'T00:00:00');let ps=0,nx='—';
+if(!isNaN(st))for(let k=0;k<cnt;k++){if(add(st,k)<=now)ps++;else{nx=ymd(add(st,k));break}}
+const exp=Math.min(d.tot,ps*d.inst),ar=Math.max(0,exp-paid);tr+=rem;tp+=paid;ta+=ar;
+return[d.n,d.o>=0&&f.mem[d.o]?f.mem[d.o].n:'مشترك (العائلة)',d.tot,paid,rem,d.tot?paid/d.tot*100:0,d.inst>0?Math.ceil(rem/d.inst):0,rem>0?nx:'سُدّد',ar,f.mem.filter((m,q)=>dp[i][q]>0).map(m=>m.n+' '+num(dp[i][f.mem.indexOf(m)])).join('، ')||'—']});
+const se=[];for(let a=0;a<N;a++)for(let b=a+1;b<N;b++){const n=ow[a][b]-ow[b][a];if(Math.abs(n)>.5)se.push(n>0?[f.mem[a].n,f.mem[b].n,n]:[f.mem[b].n,f.mem[a].n,-n])}
+const mel=st=>{const s=new Date(st+'T00:00:00');if(isNaN(s))return 0;let c=0;while(c<600&&add(s,c)<=now)c++;return c};
+let SP=0,SA=0;const pa=[];f.pj.forEach((p,j)=>f.mem.forEach((m,i)=>{const pl=(p.ini[i]||0)+(p.al[i]||0)*mel(p.st),ac=ip[j][i];if(pl||ac){SP+=pl;SA+=ac;pa.push([p.n,m.n,pl,ac,ac-pl,pl?ac/pl*100:100])}}));
+const mb=d=>{const x=new Date(d+'T00:00:00');return isNaN(x)?0:Math.max(0,(x.getFullYear()-now.getFullYear())*12+x.getMonth()-now.getMonth())};
+const TI=f.mem.reduce((a,m)=>a+m.inc,0)||1,gr=[],gm=[];let GT=0;
+f.goals.forEach((g,j)=>{const rs=gp[j].reduce((a,b)=>a+b,0),rem=Math.max(g.tgt-rs,0),ml=mb(g.d),req=ml?rem/ml:rem;GT+=rs;
+gr.push([g.n,g.tgt,rs,g.tgt?rs/g.tgt*100:0,rem,g.d,ml,req,rem<=0?'تحقق ✅':ml?'جارٍ':'انتهى الموعد ⚠️']);
+f.mem.forEach((m,i)=>gm.push([g.n,m.n,gp[j][i],rs?gp[j][i]/rs*100:0,req*m.inc/TI]))});
+const e=f.ex,xp=f.pj[e.p],xm=f.mem[e.m],ex=[];
+if(xp&&xm){const tot=ip[e.p].reduce((a,b)=>a+b,0),ci=ip[e.p][e.m],sh=tot?ci/tot:0,val=e.val*sh,pay=val*(1-e.disc/100);
+ex.push({t:`محاكاة خروج ${xm.n} من «${xp.n}»`,h:['البند','القيمة'],r:tot?[['مساهماته الفعلية',ci],['حصته من المشروع %',sh*100],['قيمة حصته بالتقييم',val],['خصم الخروج',val-pay],['المبلغ الذي يستلمه',pay],['الربح/الخسارة على مساهماته',pay-ci]]:[['لا توجد حركات «استثمار» مسجّلة في هذا المشروع',0]]});
+if(tot>ci)ex.push({t:'توزيع شراء حصته على الشركاء الباقين',h:['الشريك','مساهماته','حصته الجديدة %','يدفع لشراء حصة الخارج'],r:f.mem.map((m,q)=>q!=e.m&&ip[e.p][q]>0?[m.n,ip[e.p][q],ip[e.p][q]/(tot-ci)*100,pay*ip[e.p][q]/(tot-ci)]:0).filter(Boolean)})}
+const x=[];if(dr.length)x.push({t:'الديون والأقساط',h:['الدين / الدائن','على من','الإجمالي','المسدّد','المتبقي','التقدم %','أقساط متبقية','القسط القادم','المتأخر','من سدّد'],r:dr});
+if(pa.length)x.push({t:'المشاريع: الفعلي مقابل المخطط حتى اليوم',h:['المشروع','العضو','المخطط','المدفوع فعليًا','الفرق','الإنجاز %'],r:pa});
+if(gr.length){x.push({t:'الأهداف المشتركة',h:['الهدف','المستهدف','المجموع','الإنجاز %','المتبقي','الموعد','أشهر متبقية','المطلوب شهريًا','الحالة'],r:gr});x.push({t:'مساهمة الأعضاء في الأهداف (والمقترح شهريًا بنسبة الدخل)',h:['الهدف','العضو','ساهم بـ','نسبته %','المقترح شهريًا'],r:gm})}
+x.push(...ex);
+x.push({t:'التسويات الداخلية: من يدين لمن',h:['المدين','الدائن','المبلغ'],r:se.length?se:[['—','لا توجد مبالغ مستحقة بين الأعضاء',0]]});
+return{k:[['إجمالي الديون المتبقية',tr,'m'],['إجمالي المسدّد',tp,'m'],['أقساط متأخرة',ta,'m'],['إجمالي أرصدة الصناديق',cash.reduce((a,b)=>a+b,0),'m'],['التزام الأعضاء بالمشاريع (الفعلي ÷ المخطط)',SP?SA/SP*100:0,'p'],['مجموع ما جُمع للأهداف',GT,'m'],['عدد الحركات المسجّلة',f.tx.length,'n']],ns:1,
+h:['العضو','بدأ بـ','دخل','ادخر','استثمر','سدّد ديونًا','أنفق','ساهم في الأهداف','صافي التحويلات','رصيد الصندوق الآن','صافي ثروته (رصيد + ادخار + استثمار)'],
+r:f.mem.map((m,i)=>[m.n,m.open||0,B.inc[i],B.sav[i],B.inv[i],B.debt[i],B.exp[i],B.goal[i],B.tIn[i]-B.tOut[i],cash[i],cash[i]+B.sav[i]+B.inv[i]]),x,
+note:'لكل عضو صندوق يبدأ برأسماله ثم تتبعه الحركات. سداد دين الأخ من صندوقك يُسجَّل مبلغًا مستحقًا عليه ويسقط بـ«تحويل لعضو». الدين المشترك يُقسَّم بالتساوي. المخطط للمشاريع = المبلغ الأولي + الشهري × عدد الأشهر منذ تاريخ البدء. الخروج من الشراكة يوزّع الحصة بنسبة المساهمات الفعلية المسجّلة، ويحتاج منك تقييمًا للمشروع اليوم.'}}
+function ledCalc(){const f=S.fam,o=lastOut=ledFn();save();lastMeta={t:'دفتر العائلة: الصناديق والديون',f:'ledger',d:D(),ins:[['الأعضاء ورؤوس أموالهم',f.mem.map(m=>m.n+' — '+num(m.open||0)).join('\n')],['عدد الديون',f.debts.length],['عدد الحركات',f.tx.length]]};paint(o)}
+function led(){const f=S.fam,G3='display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0 12px',
+fl=(l,p,v,t)=>`<div><label>${l}</label><input ${t?'':'type="number" step="any" '}data-p="${p}" value="${esc(v)}"></div>`,
+sl=(l,p,L,v)=>`<div><label>${l}</label><select ${p?`data-p="${p}"`:''}>${L.map(o=>`<option value="${o[0]}" ${o[0]==v?'selected':''}>${o[1]}</option>`).join('')}</select></div>`,
+mo=f.mem.map((m,i)=>[i,m.n]),tdy=ymd(new Date()),
+rl=t=>{const r=String(t.r||''),i=+r.slice(1),L=r[0]=='d'?f.debts:r[0]=='p'?f.pj:r[0]=='m'?f.mem:r[0]=='g'?f.goals:null;return L&&L[i]?({d:'دين: ',p:'مشروع: ',m:'إلى: ',g:'هدف: '}[r[0]])+L[i].n:'—'};
+$('#view').innerHTML=`<h2 style="margin:0 0 10px;font-size:28px">دفتر العائلة: الصناديق والديون</h2><div class="pm" id="pm"></div>
+<div class="card fm"><h3 style="margin:0">الديون والأقساط</h3>${f.debts.map((d,i)=>`<div class="card" style="margin-top:10px"><div style="${G3}">${fl('الدين / اسم الدائن',`debts.${i}.n`,d.n,1)}${fl('المبلغ الإجمالي',`debts.${i}.tot`,d.tot)}${fl('القسط الشهري',`debts.${i}.inst`,d.inst)}<div><label>تاريخ أول قسط</label><input type="date" data-p="debts.${i}.d" value="${d.d}"></div>${sl('الدين على',`debts.${i}.o`,[[-1,'مشترك (العائلة)'],...mo],d.o)}</div><button class="bt g" data-dd="${i}">حذف الدين</button></div>`).join('')}<button class="bt" id="adb">+ إضافة دين</button></div>
+<div class="card fm" style="margin-top:14px"><h3 style="margin:0">الأهداف العائلية المشتركة (زواج، أرض، حج…)</h3>${f.goals.map((g,i)=>`<div class="card" style="margin-top:10px"><div style="${G3}">${fl('اسم الهدف',`goals.${i}.n`,g.n,1)}${fl('المبلغ المستهدف',`goals.${i}.tgt`,g.tgt)}<div><label>الموعد المستهدف</label><input type="date" data-p="goals.${i}.d" value="${g.d}"></div></div><button class="bt g" data-dg="${i}">حذف الهدف</button></div>`).join('')}<button class="bt" id="adg">+ إضافة هدف</button></div>
+${f.pj.length?`<div class="card fm" style="margin-top:14px"><h3 style="margin:0">محاكاة الخروج من شراكة</h3><div style="${G3}">${sl('المشروع','ex.p',f.pj.map((p,i)=>[i,p.n]),f.ex.p)}${sl('الشريك الخارج','ex.m',mo,f.ex.m)}${fl('تقييم المشروع اليوم','ex.val',f.ex.val)}${fl('خصم الخروج %','ex.disc',f.ex.disc)}</div></div>`:''}
+<div class="card fm" style="margin-top:14px"><h3 style="margin:0">تسجيل حركة في صندوق</h3><div style="${G3}"><div><label>التاريخ</label><input type="date" id="x-d" value="${tdy}"></div>${sl('من صندوق','',mo,0).replace('<select','<select id="x-m"')}${sl('النوع','',Object.keys(CT).map(k=>[k,CT[k]]),'debt').replace('<select','<select id="x-c"')}${sl('المرتبط به (دين / مشروع / عضو / هدف)','',[['','—'],...f.debts.map((d,i)=>['d'+i,'دين: '+d.n]),...f.pj.map((p,i)=>['p'+i,'مشروع: '+p.n]),...f.goals.map((g,i)=>['g'+i,'هدف: '+g.n]),...mo.map(x=>['m'+x[0],'عضو: '+x[1]])],'').replace('<select','<select id="x-r"')}<div><label>المبلغ</label><input type="number" step="any" id="x-a"></div><div><label>ملاحظة</label><input id="x-n"></div></div>
+<button class="bt" id="atx">إضافة الحركة</button><button class="bt g" id="sal">تسجيل رواتب هذا الشهر لكل الأعضاء</button>
+<div class="tw"><table><tr><th>التاريخ</th><th>الصندوق</th><th>النوع</th><th>المرتبط</th><th>المبلغ</th><th>ملاحظة</th><th></th></tr>${f.tx.map((t,i)=>[t,i]).reverse().slice(0,40).map(([t,i])=>`<tr><td>${t.d}</td><td>${f.mem[t.m]?f.mem[t.m].n:'—'}</td><td>${CT[t.c]}</td><td>${rl(t)}</td><td>${num(t.a)}</td><td>${esc(t.n||'')}</td><td><button class="bt g" style="margin:0" data-dt="${i}">حذف</button></td></tr>`).join('')}</table></div></div>
+<div class="card" id="res" style="margin-top:14px"></div><div id="rep"></div>`;ledCalc()}
+
+let cur=MS[0].id;
+const fmtV=(x,t)=>t=='m'?num(x)+' '+S.cur:t=='p'?num(x)+'%':t=='s'?x:num(x);
+function buildNav(){let h='<h1>الحاسبة الاستثمارية</h1>',g='';
+MS.forEach(m=>{if(m.g!=g){g=m.g;h+=`<h3>${g}</h3>`;if(g==G)h+=`<button data-m="_f" class="${cur=='_f'?'on':''}">الحاسبة العائلية (مشروع مفتوح)</button><button data-m="_l" class="${cur=='_l'?'on':''}">دفتر العائلة: الصناديق والديون</button>`}h+=`<button data-m="${m.id}" class="${cur==m.id?'on':''}">${m.t}</button>`});
+h+=`<h3>العملات</h3><button data-m="_c" class="${cur=='_c'?'on':''}">العملات العالمية والأسعار</button><h3>المشاريع</h3><button data-m="_p" class="${cur=='_p'?'on':''}">المشاريع المحفوظة</button>`;
+$('#nav').innerHTML=h}
+const $=s=>document.querySelector(s);
+function buildTop(){$('#top').innerHTML='<button class="chip mb" id="mb">☰ الحاسبات</button><b>العملة:</b>'+S.main.map(c=>`<button class="chip ${c==S.cur?'on':''}" data-c="${c}">${c}</button>`).join('')+
+`<span class="note" style="margin:0">المبالغ المُدخلة بعملة ${S.cur}</span>`}
+function opts(t,val){const L=t=='F'?FQ:Object.keys(CN).map(c=>[c,c+' — '+CN[c][0]]);return L.map(o=>`<option value="${o[0]}" ${o[0]==val?'selected':''}>${o[1]}</option>`).join('')}
+function show(id){cur=id;buildNav();$('#nav').classList.remove('open');if(id=='_f')return fam();if(id=='_l')return led();if(id=='_c')return curr();if(id=='_p')return projects();const m=MS.find(x=>x.id==id),sv=S.v[id]||{};
+$('#view').innerHTML=`<h2 style="margin:0 0 10px;font-size:28px">${m.t}</h2><div class="pm" id="pm"></div><div class="grid"><div class="card fm">${m.f.map(f=>{const val=sv[f[0]]??f[2];
+return`<label>${f[1]}</label>`+(f[3]=='F'||f[3]=='C'?`<select data-k="${f[0]}">${opts(f[3],val)}</select>`:f[3]=='t'?`<textarea rows="3" data-k="${f[0]}">${val}</textarea>`:`<input type="number" step="any" data-k="${f[0]}" value="${val}">`)}).join('')}
+<button class="bt" id="sv">حفظ كمشروع</button></div><div class="card" id="res"></div></div><div id="rep"></div>`;calc()}
+function vals(){const m=MS.find(x=>x.id==cur),v={};m.f.forEach(f=>{const e=document.querySelector(`[data-k="${f[0]}"]`);v[f[0]]=f[3]?e.value:parseFloat(e.value)||0});return v}
+let lastOut,lastMeta;
+const tb=(h,r,t)=>(t?`<h3 style="margin:16px 0 0;font-size:19px">${t}</h3>`:'')+`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${r.map(q=>'<tr>'+q.map(x=>`<td>${typeof x=='number'?num(x):x}</td>`).join('')+'</tr>').join('')}</table></div>`;
+const D=()=>new Date().toLocaleDateString('ar-u-nu-latn',{year:'numeric',month:'long',day:'numeric'});
+const metaLine=()=>`التاريخ: ${D()} — العملة: ${S.cur} — أسعار الصرف: ${S.main.map(c=>`1 USD = ${S.rates[c]} ${c}`).join(' ، ')}`;
+function rep(){const m=lastMeta,o=lastOut;
+const kv=o.k.map(x=>`<tr><td>${x[0]}</td><td><b>${fmtV(x[1],x[2])}</b></td><td>${x[2]=='m'?S.main.filter(c=>c!=S.cur).map(c=>num(conv(x[1],S.cur,c))+' '+c).join(' | '):''}</td></tr>`).join('');
+return`<h2>${m.t}</h2><p class="note">${metaLine()}</p><h3>المدخلات والفرضيات</h3><table>${m.ins.map(x=>`<tr><td>${x[0]}</td><td style="white-space:pre-line">${x[1]}</td></tr>`).join('')}</table><h3>النتائج</h3><table><tr><th>البند</th><th>القيمة</th><th>المكافئ</th></tr>${kv}</table>${o.r.length?tb(o.h,o.r):''}${(o.x||[]).map(z=>tb(z.h,z.r,z.t)).join('')}${o.note?`<p class="note">${o.note}</p>`:''}<p class="note">أرقام تقديرية للتخطيط وليست نصيحة استثمارية أو ضمانًا للعوائد.</p>`}
+function prt(c){document.body.className=c;print();document.body.className=''}
+function png(){const m=lastMeta,o=lastOut,W=900,pd=40,L=[['h','المدخلات والفرضيات']];
+m.ins.forEach(x=>{let t=String(x[1]).split('\n').join(' ؛ ');L.push(['r',x[0],t.length>46?t.slice(0,46)+'…':t])});
+L.push(['h','النتائج']);o.k.forEach(x=>L.push(['r',x[0],fmtV(x[1],x[2])]));
+const H=130+L.reduce((a,l)=>a+(l[0]=='h'?44:36),0)+56,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+const A='Amiri,"Noto Naskh Arabic",serif',B='"Noto Naskh Arabic",Tahoma,serif';
+g.fillStyle='#f7faf8';g.fillRect(0,0,W,H);g.fillStyle='#0f2e2b';g.fillRect(0,0,W,96);g.direction='rtl';g.textAlign='right';
+g.fillStyle='#fff';g.font='700 32px '+A;g.fillText(m.t,W-pd,48);g.fillStyle='#e0b469';g.font='15px '+B;g.fillText(m.d+' — العملة: '+S.cur,W-pd,80);
+let y=136;L.forEach(l=>{if(l[0]=='h'){g.fillStyle='#b7791f';g.font='700 21px '+A;g.textAlign='right';g.fillText(l[1],W-pd,y);g.fillRect(pd,y+8,W-2*pd,2);y+=44}
+else{g.fillStyle='#58716d';g.font='16px '+B;g.textAlign='right';g.fillText(l[1],W-pd,y);g.fillStyle='#0f2e2b';g.font='700 17px '+B;g.textAlign='left';g.fillText(l[2],pd,y);y+=36}});
+g.fillStyle='#58716d';g.font='13px '+B;g.textAlign='center';g.fillText('أرقام تقديرية للتخطيط وليست نصيحة استثمارية',W/2,H-18);
+c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(lastMeta.f||cur)+'.png';a.click()})}
+function calc(){const m=MS.find(x=>x.id==cur),v=vals();S.v[cur]=v;save();const o=lastOut=m.fn(v);lastMeta={t:m.t,d:D(),ins:m.f.map(f=>[String(f[1]).split(':')[0],f[3]=='F'?(FQ.find(q=>q[0]==v[f[0]])||[0,''])[1]:f[3]=='C'?v[f[0]]:f[3]=='t'?v[f[0]]:num(v[f[0]])])};
+paint(o)}
+function paint(o){
+const eq=(x,t)=>t=='m'?'<small>≈ '+S.main.filter(c=>c!=S.cur).map(c=>num(conv(x,S.cur,c))+' '+c).join(' · ')+'</small>':'';
+const k=o.k,l=k[0];
+let h=`<div class="lead">${fmtV(l[1],l[2])}<small>${l[0]}</small>${eq(l[1],l[2])}</div><div class="ks">`+k.slice(1).map(x=>`<div class="k"><span>${x[0]}</span><br><b>${fmtV(x[1],x[2])}</b>${eq(x[1],x[2])}</div>`).join('')+'</div>';
+if(!o.ns&&o.r.length>1&&o.r[0].length>2){const ys=o.r.map(r=>+r[r.length-1]||0),mx=Math.max(...ys.map(Math.abs))||1,w=600/(ys.length-1);
+h+=`<svg viewBox="0 0 600 70" style="width:100%;margin-top:14px"><polyline fill="none" stroke="#b7791f" stroke-width="2.5" points="${ys.map((y,i)=>(i*w).toFixed(1)+','+(65-Math.max(y,0)/mx*60).toFixed(1)).join(' ')}"/></svg>`}
+if(o.r.length)h+=tb(o.h,o.r);(o.x||[]).forEach(z=>h+=tb(z.h,z.r,z.t));if(o.note)h+=`<p class="note">${o.note}</p>`;
+h+=`<button class="bt" id="png">حفظ كصورة PNG</button><button class="bt" id="pr1">طباعة التقرير (نتيجة + مدخلات)</button><button class="bt g" id="pr2">طباعة الصفحة كاملة</button><button class="bt g" id="csv">تصدير CSV</button><p class="note">النتائج تقديرية لأغراض التخطيط وليست نصيحة استثمارية.</p>`;
+$('#res').innerHTML=h;$('#rep').innerHTML=rep();$('#pm').innerHTML=metaLine()}
+function csv(){const o=lastOut,m=lastMeta;let a=[[m.t],[m.d],['العملة',S.cur],[],['المدخلات'],...m.ins.map(x=>[x[0],String(x[1]).split('\n').join(' ؛ ')]),[],['النتائج'],...o.k.map(x=>[x[0],x[1]])];
+if(o.r.length)a.push([],o.h,...o.r);(o.x||[]).forEach(z=>a.push([],[z.t||''],z.h,...z.r));
+const t='\ufeff'+a.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'),b=new Blob([t],{type:'text/csv'}),u=document.createElement('a');u.href=URL.createObjectURL(b);u.download=(lastMeta.f||cur)+'.csv';u.click()}
+function curr(){
+$('#view').innerHTML=`<h2 style="margin:0 0 10px;font-size:28px">العملات العالمية</h2><div class="grid"><div class="card"><h3 style="margin:0">العملات الثلاث في الواجهة</h3>
+${[0,1,2].map(i=>`<label>العملة ${i+1}</label><select data-mc="${i}">${opts('C',S.main[i])}</select>`).join('')}
+<p class="note">اختر هنا من القائمة الكاملة؛ تظهر الثلاث فقط في أعلى التطبيق للتبديل السريع. كل الحسابات تُحوَّل داخليًا عبر الدولار.</p>
+<button class="bt g" id="rr">إعادة الأسعار الافتراضية</button></div>
+<div class="card"><h3 style="margin:0 0 6px">أسعار الصرف (لكل 1 دولار)</h3><p class="note" style="margin:0 0 6px">أسعار تقريبية قابلة للتعديل؛ حدّثها بنفسك.</p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px">${Object.keys(CN).map(c=>`<div><label>${c} — ${CN[c][0]}</label><input type="number" step="any" data-rt="${c}" value="${S.rates[c]}"></div>`).join('')}</div></div></div>`}
+function projects(){const pr=Object.keys(S.pr);
+$('#view').innerHTML=`<h2 style="margin:0 0 10px;font-size:28px">المشاريع المحفوظة</h2><div class="card">${pr.length?pr.map(n=>`<div class="pr"><span>${n} <small class="note">(${MS.find(m=>m.id==S.pr[n].m).t})</small></span><span><button class="bt" data-o="${n}">فتح</button><button class="bt g" data-x="${n}">حذف</button></span></div>`).join(''):'<p class="note">لا توجد مشاريع بعد. افتح أي حاسبة واضغط «حفظ كمشروع».</p>'}</div><div class="card" style="margin-top:14px"><h3 style="margin:0">نسخة احتياطية ومشاركة</h3><p class="note">بياناتك محفوظة في هذا المتصفح فقط. صدّر نسخة لتحفظها أو لترسلها لأخيك، واستوردها في متصفح آخر.</p><button class="bt" id="bk">تصدير نسخة احتياطية</button><label class="bt g" style="display:inline-block;cursor:pointer">استيراد نسخة<input type="file" id="bkf" accept=".json" hidden></label></div>`}
+document.addEventListener('click',e=>{const t=e.target;
+if(t.dataset.m)show(t.dataset.m);
+else if(t.id=='adb'){S.fam.debts.push({n:'دين جديد',tot:10000,inst:1000,d:ymd(new Date()),o:-1});led()}
+else if(t.dataset.dd!==undefined){const i=+t.dataset.dd;S.fam.debts.splice(i,1);fixRef('d',i);led()}
+else if(t.dataset.dt!==undefined){S.fam.tx.splice(+t.dataset.dt,1);led()}
+else if(t.id=='adg'){const d=new Date();d.setFullYear(d.getFullYear()+1);S.fam.goals.push({n:'هدف جديد',tgt:100000,d:ymd(d)});led()}
+else if(t.dataset.dg!==undefined){const i=+t.dataset.dg;S.fam.goals.splice(i,1);fixRef('g',i);led()}
+else if(t.id=='sal'){const f=S.fam;f.mem.forEach((m,i)=>m.inc&&f.tx.push({d:ymd(new Date()),m:i,c:'inc',r:'',a:m.inc,n:'راتب'}));led()}
+else if(t.id=='atx'){const f=S.fam,g=i=>$('#'+i).value,c=g('x-c'),r=g('x-r'),a=parseFloat(g('x-a'))||0,m=+g('x-m'),nd={debt:'d',inv:'p',tr:'m',goal:'g'}[c];
+if(!a)return alert('أدخل المبلغ');if(nd&&!(r&&r[0]==nd))return alert('اختر الدين أو المشروع أو العضو المناسب في خانة «المرتبط به»');if(c=='tr'&&+r.slice(1)==m)return alert('لا يمكن التحويل لنفس الصندوق');
+f.tx.push({d:g('x-d'),m,c,r:nd?r:'',a,n:g('x-n')});save();led()}
+else if(t.id=='bk'){const b=new Blob([JSON.stringify(S)],{type:'application/json'}),u=document.createElement('a');u.href=URL.createObjectURL(b);u.download='investment-backup-'+ymd(new Date())+'.json';u.click()}
+else if(t.id=='am'){const f=S.fam;f.mem.push({n:'عضو جديد',job:'',age:30,inc:10000,sv:10,g:3,open:0});f.pj.forEach(p=>{p.ini.push(0);p.al.push(0)});fam()}
+else if(t.id=='ap'){const f=S.fam;f.pj.push({n:'مشروع جديد',st:ymd(new Date()),r:10,ini:f.mem.map(()=>0),al:f.mem.map(()=>0)});fam()}
+else if(t.dataset.dm!==undefined){const f=S.fam,i=+t.dataset.dm;f.mem.splice(i,1);f.pj.forEach(p=>{p.ini.splice(i,1);p.al.splice(i,1)});fixRef('m',i);fam()}
+else if(t.dataset.dp!==undefined){S.fam.pj.splice(+t.dataset.dp,1);fixRef('p',+t.dataset.dp);fam()}
+else if(t.dataset.c){S.cur=t.dataset.c;save();buildTop();refresh()}
+else if(t.id=='sv'){const n=prompt('اسم المشروع:');if(n){S.pr[n]={m:cur,v:S.v[cur]};save()}}
+else if(t.id=='csv')csv();else if(t.id=='png')png();else if(t.id=='pr1')prt('pr-rep');else if(t.id=='pr2')prt('');
+else if(t.id=='mb')$('#nav').classList.toggle('open');
+else if(t.id=='rr'){S.rates={};for(const c in CN)S.rates[c]=CN[c][1];save();curr()}
+else if(t.dataset.o){const p=S.pr[t.dataset.o];S.v[p.m]=p.v;show(p.m)}
+else if(t.dataset.x){delete S.pr[t.dataset.x];save();projects()}});
+document.addEventListener('input',e=>{const t=e.target;
+if(t.dataset.p!==undefined){setP(t);cur=='_l'?ledCalc():famCalc()}
+else if(t.dataset.k)calc();
+else if(t.dataset.rt){S.rates[t.dataset.rt]=parseFloat(t.value)||S.rates[t.dataset.rt];save()}});
+document.addEventListener('change',e=>{const t=e.target;
+if(t.id=='bkf'){if(!t.files[0])return;if(!confirm('سيستبدل الاستيراد بياناتك الحالية. متابعة؟')){t.value='';return}const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!d.rates)throw 0;S=Object.assign(S,d);normFam();save();buildTop();show('_p');alert('تم الاستيراد')}catch(e){alert('الملف غير صالح')}};r.readAsText(t.files[0])}
+else if(t.dataset.mc){S.main[+t.dataset.mc]=t.value;if(!S.main.includes(S.cur))S.cur=S.main[0];save();buildTop();refresh()}});
+buildTop();show(cur);
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
